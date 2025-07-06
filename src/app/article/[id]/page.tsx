@@ -93,7 +93,7 @@ export default function ArticleResultPage() {
           const { result: wordsResult } = await wordRes.json();
           setSentences(sentencesResult);
           setWordCandidates(wordsResult);
-        } catch (e) {
+        } catch {
           setError('OpenAI 분석에 실패했습니다.');
         }
         setLoading(false);

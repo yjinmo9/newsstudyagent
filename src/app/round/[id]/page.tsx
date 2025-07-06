@@ -58,7 +58,7 @@ export default function RoundDetailPage() {
 
       // 3. 성공 시 다음 단계로 이동
       router.push(`/article/${data.id}`);
-    } catch (_err) {
+    } catch {
       setError('기사 저장 또는 분석 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

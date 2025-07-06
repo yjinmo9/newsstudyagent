@@ -61,7 +61,7 @@ export default function WordCardArchivePage() {
       // 저장 후 다시 불러오기
       const { data } = await supabase.from('word_cards').select('*').eq('round_id', id);
       setWordCards((data ?? []) as WordCard[]);
-    } catch (_) {
+    } catch {
       setError('저장 실패');
     }
     setLoading(false);
