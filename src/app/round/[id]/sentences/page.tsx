@@ -38,7 +38,7 @@ export default function SentenceListPage() {
           setLoading(false);
           return;
         }
-        const articleIds = (articles || []).map((a: any) => a.id);
+        const articleIds = (articles || []).map((a: { id: number }) => a.id);
         if (articleIds.length === 0) {
           setSentences([]);
           setLoading(false);

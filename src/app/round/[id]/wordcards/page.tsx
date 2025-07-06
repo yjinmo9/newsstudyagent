@@ -165,11 +165,11 @@ export default function WordCardEditPage() {
         return;
       }
       const { result } = await res.json();
-      setFinalCards(result.map((item: any) => ({
+      setFinalCards(result.map((item: WordCard) => ({
         word: item.word,
         part_of_speech: item.part_of_speech,
         meaning: item.meaning,
-      })) as WordCard[]);
+      })));
       // draft → final로 업데이트
       await supabase
         .from('word_cards')
@@ -185,8 +185,8 @@ export default function WordCardEditPage() {
       setFinalCards(finalCardsData || []);
       setStep('final');
       setSaved(true);
-    } catch (e: any) {
-      setError('단어카드 표 생성 실패: ' + (e.message || e));
+    } catch (error) {
+      setError('단어카드 표 생성 실패: ' + (error instanceof Error ? error.message : error));
     }
     setLoading(false);
   };

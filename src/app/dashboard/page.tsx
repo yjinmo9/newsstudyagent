@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation'; // 반드시 next/navigation!
 import { supabase } from '@/lib/supabaseClient';
+import { User } from '@supabase/supabase-js';
 
 interface Round {
   id: number;
@@ -12,7 +13,7 @@ interface Round {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -53,7 +54,7 @@ export default function DashboardPage() {
     setLoading(true);
     setError('');
     const { error } = await supabase.from('rounds').insert({
-      user_id: user.id,
+      user_id: user?.id,
       name,
       date,
     });
@@ -61,7 +62,9 @@ export default function DashboardPage() {
     setShowForm(false);
     setName('');
     setDate('');
-    fetchRounds(user.id);
+    if (user) {
+      fetchRounds(user.id);
+    }
     setLoading(false);
   };
 

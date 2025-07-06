@@ -147,8 +147,8 @@ export default function ArticleResultPage() {
         }
       }
       router.push(`/round/${roundId}/wordcards`);
-    } catch (e: any) {
-      setError('단어카드 이동 중 오류: ' + (e.message || e));
+    } catch (error) {
+      setError('단어카드 이동 중 오류: ' + (error instanceof Error ? error.message : error));
     }
     setLoading(false);
   };

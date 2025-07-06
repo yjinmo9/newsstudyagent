@@ -4,11 +4,18 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
+interface Round {
+  id: number;
+  name: string;
+  date: string;
+  // 필요한 필드 추가
+}
+
 export default function RoundDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const [round, setRound] = useState<any>(null);
+  const [round, setRound] = useState<Round | null>(null);
   const [url, setUrl] = useState('');
   const [sentenceCount, setSentenceCount] = useState(5);
   const [loading, setLoading] = useState(false);
