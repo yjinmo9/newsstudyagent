@@ -1,11 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, PostgrestError } from '@supabase/supabase-js';
 import puppeteer from 'puppeteer';
 
+// Supabase 클라이언트
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// 크롤링 함수
 async function crawlArticle(url: string): Promise<string> {
   const browser = await puppeteer.launch({
     headless: true,
@@ -38,8 +40,11 @@ async function crawlArticle(url: string): Promise<string> {
   }
 }
 
+// API Route (POST)
 export const POST = async (req: Request): Promise<Response> => {
+  // 타입 명확히 지정
   const { url, articleId }: { url: string; articleId: number } = await req.json();
+
   if (!url || !articleId) {
     return new Response(JSON.stringify({ error: 'url, articleId 필요' }), { status: 400 });
   }
@@ -47,7 +52,8 @@ export const POST = async (req: Request): Promise<Response> => {
     const text = await crawlArticle(url);
     if (!text) return new Response(JSON.stringify({ error: '본문 추출 실패' }), { status: 500 });
 
-    const { error }: { error: { message: string } | null } = await supabase
+    // Supabase 반환값 타입 명확화
+    const { error }: { error: PostgrestError | null } = await supabase
       .from('articles')
       .update({ text })
       .eq('id', articleId);
