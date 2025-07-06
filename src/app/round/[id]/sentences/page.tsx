@@ -7,9 +7,9 @@ import { supabase } from '@/lib/supabaseClient';
 interface Sentence {
   id?: number;
   article_id?: number;
-  text: string;                // 원문(DB 컬럼명)
-  translation?: string;        // 해석
-  hints?: string[] | string;   // 힌트
+  text: string;
+  translation?: string;
+  hints?: string[] | string;
 }
 
 export default function SentenceListPage() {
@@ -27,7 +27,6 @@ export default function SentenceListPage() {
     if (!id) return;
     setLoading(true);
     setError('');
-    // 1. 해당 round_id의 article_id 리스트 조회
     supabase
       .from('articles')
       .select('id')
@@ -44,7 +43,6 @@ export default function SentenceListPage() {
           setLoading(false);
           return;
         }
-        // 2. article_id 리스트로 sentences 조회
         const { data: sentencesData, error: sentenceError } = await supabase
           .from('sentences')
           .select('*')
@@ -62,7 +60,6 @@ export default function SentenceListPage() {
     }
     if (typeof hints === 'string' && hints.trim() !== '') {
       try {
-        // 혹시 stringified array로 저장된 경우
         const parsed = JSON.parse(hints);
         if (Array.isArray(parsed)) return parsed.join(', ');
         return hints;

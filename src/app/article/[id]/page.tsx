@@ -24,7 +24,6 @@ export default function ArticleResultPage() {
   const [mounted, setMounted] = useState(false);
 
   // 상태값들
-  const [articleText, setArticleText] = useState('');
   const [sentences, setSentences] = useState<Sentence[]>([]);
   const [wordCandidates, setWordCandidates] = useState<WordCandidate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,7 +53,6 @@ export default function ArticleResultPage() {
           setLoading(false);
           return;
         }
-        setArticleText(data.text);
 
         try {
           // 추천 문장/단어카드 동시 호출

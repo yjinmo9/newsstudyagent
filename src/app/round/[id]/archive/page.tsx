@@ -23,12 +23,6 @@ export default function WordCardArchivePage() {
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
-  // 예시: 저장할 단어카드 데이터 (실제로는 props/context 등에서 받아야 함)
-  const candidates: WordCard[] = [
-    // { word: 'example', part_of_speech: 'noun', meaning: '예시', example: '' },
-    // 실제 데이터 연동 필요
-  ];
-
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -67,7 +61,7 @@ export default function WordCardArchivePage() {
       // 저장 후 다시 불러오기
       const { data } = await supabase.from('word_cards').select('*').eq('round_id', id);
       setWordCards((data ?? []) as WordCard[]);
-    } catch (_e: unknown) {
+    } catch (_) {
       setError('저장 실패');
     }
     setLoading(false);

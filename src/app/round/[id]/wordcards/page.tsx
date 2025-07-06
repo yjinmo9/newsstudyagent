@@ -129,62 +129,8 @@ export default function WordCardEditPage() {
         .eq('round_id', Number(id))
         .eq('status', 'final');
       setFinalCards((data ?? []) as WordCard[]);
-    } catch (e) {
+    } catch {
       setError('저장 실패');
-    }
-    setLoading(false);
-  };
-
-  // (OpenAI 기반 최종 표 만들기)
-  const handleMakeFinal = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      if (!articleId) {
-        setError('article_id를 찾을 수 없습니다.');
-        setLoading(false);
-        return;
-      }
-      const res = await fetch('/api/make-wordcards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: candidates.map(item => ({
-          word: item.word,
-          meaning: item.meaning,
-          part_of_speech: '',
-          article_id: articleId,
-        })) }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        setError('API 에러: ' + (err.error || res.statusText));
-        setLoading(false);
-        return;
-      }
-      const { result } = await res.json();
-      setFinalCards(
-        (result as WordCard[]).map((item: WordCard) => ({
-          word: item.word,
-          part_of_speech: item.part_of_speech,
-          meaning: item.meaning,
-        }))
-      );
-      // draft → final로 업데이트
-      await supabase
-        .from('word_cards')
-        .update({ status: 'final' })
-        .eq('round_id', Number(id))
-        .eq('status', 'draft');
-      const { data: finalCardsData } = await supabase
-        .from('word_cards')
-        .select('*')
-        .eq('round_id', Number(id))
-        .eq('status', 'final');
-      setFinalCards((finalCardsData ?? []) as WordCard[]);
-      setStep('final');
-      setSaved(true);
-    } catch (error) {
-      setError('단어카드 표 생성 실패: ' + (error instanceof Error ? error.message : String(error)));
     }
     setLoading(false);
   };
