@@ -1,11 +1,8 @@
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import OpenAI from 'openai';
-import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
 
 interface SentenceResult {
   sentence: string;
@@ -15,6 +12,7 @@ interface SentenceResult {
 
 // POST 함수 타입 명확히
 export const POST = async (req: Request): Promise<Response> => {
+  const supabase = createRouteHandlerClient({ cookies });
   // req.json() 반환값에 타입 명시
   const {
     articleText,

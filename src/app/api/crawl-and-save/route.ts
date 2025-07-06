@@ -1,11 +1,13 @@
-import { createClient, PostgrestError } from '@supabase/supabase-js';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import puppeteer from 'puppeteer';
 
 // Supabase 클라이언트
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
+// const supabase = createClient(
+//   process.env.NEXT_PUBLIC_SUPABASE_URL!,
+//   process.env.SUPABASE_SERVICE_KEY!
+// );
+
 // 크롤링 함수
 async function crawlArticle(url: string): Promise<string> {
   const browser = await puppeteer.launch({
@@ -42,7 +44,7 @@ async function crawlArticle(url: string): Promise<string> {
 
 // API Route (POST)
 export const POST = async (req: Request): Promise<Response> => {
-  // 타입 명확히 지정
+  const supabase = createRouteHandlerClient({ cookies });
   const { url, articleId }: { url: string; articleId: number } = await req.json();
 
   if (!url || !articleId) {
@@ -52,8 +54,8 @@ export const POST = async (req: Request): Promise<Response> => {
     const text = await crawlArticle(url);
     if (!text) return new Response(JSON.stringify({ error: '본문 추출 실패' }), { status: 500 });
 
-    // Supabase 반환값 타입 명확화
-    const { error }: { error: PostgrestError | null } = await supabase
+    // Supabase 반환값 타입 any로 임시 처리
+    const { error }: { error: any } = await supabase
       .from('articles')
       .update({ text })
       .eq('id', articleId);

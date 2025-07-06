@@ -75,12 +75,26 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
+  // 로그아웃 핸들러
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.replace('/login');
+  };
+
   // 마운트 안되면 아무것도 렌더 안함(SSR/CSR mismatch 방지)
   if (!mounted) return null;
 
   return (
     <div style={{ maxWidth: 480, margin: '40px auto', padding: 24, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee' }}>
-      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 24 }}>내 학습 회차</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 28, fontWeight: 700 }}>내 학습 회차</h2>
+        <button
+          onClick={handleLogout}
+          style={{ background: '#eee', color: '#222', borderRadius: 6, padding: '6px 16px', fontWeight: 600, border: 'none', cursor: 'pointer' }}
+        >
+          로그아웃
+        </button>
+      </div>
       <button
         onClick={() => setShowForm((v) => !v)}
         style={{ background: '#0070f3', color: '#fff', borderRadius: 6, padding: '8px 18px', fontWeight: 600, marginBottom: 24 }}
