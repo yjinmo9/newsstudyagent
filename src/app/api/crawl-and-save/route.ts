@@ -3,13 +3,14 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import puppeteer from 'puppeteer';
 
-// Supabase 클라이언트
-// const supabase = createClient(
-//   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-//   process.env.SUPABASE_SERVICE_KEY!
-// );
+// 1. articles 테이블 타입 선언 (실제 컬럼에 맞게 수정)
+interface Article {
+  id: number;
+  text: string;
+  // 필요에 따라 추가 컬럼 정의 (예: title?: string)
+}
 
-// 크롤링 함수
+// 2. 기사 본문 크롤링 함수
 async function crawlArticle(url: string): Promise<string> {
   const browser = await puppeteer.launch({
     headless: true,
@@ -25,7 +26,7 @@ async function crawlArticle(url: string): Promise<string> {
       '.article-body',
       '#articleBodyContents',
       '.story-body__inner',
-      '.article__content', // ← CNN 등 실제 본문 selector 추가
+      '.article__content', // CNN, BBC 등 다양한 기사 본문 selector
     ];
     let content = '';
     for (const selector of selectors) {
@@ -43,25 +44,32 @@ async function crawlArticle(url: string): Promise<string> {
   }
 }
 
-// API Route (POST)
+// 3. API Route (POST)
 export const POST = async (req: Request): Promise<Response> => {
   const supabase = createRouteHandlerClient({ cookies });
+
+  // 요청 값 타입 명시 (TypeScript!)
   const { url, articleId }: { url: string; articleId: number } = await req.json();
 
   if (!url || !articleId) {
     return new Response(JSON.stringify({ error: 'url, articleId 필요' }), { status: 400 });
   }
+
   try {
+    // 크롤링
     const text = await crawlArticle(url);
     if (!text) return new Response(JSON.stringify({ error: '본문 추출 실패' }), { status: 500 });
+    // Supabase update (반환값 타입 안전!)
+    const result = await supabase
+      .from('articles')
+      .update({ text })
+      .eq('id', articleId)
+      .select()
+      .single();
 
-    // Supabase 반환값 타입 any로 임시 처리
-    const { error }: PostgrestSingleResponse<any> = await supabase
-    .from('articles')
-    .update({ text })
-    .eq('id', articleId);
-
-    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    if (result.error) {
+      return new Response(JSON.stringify({ error: result.error.message }), { status: 500 });
+    }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error: unknown) {
