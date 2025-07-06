@@ -1,4 +1,5 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import puppeteer from 'puppeteer';
 
@@ -55,10 +56,10 @@ export const POST = async (req: Request): Promise<Response> => {
     if (!text) return new Response(JSON.stringify({ error: '본문 추출 실패' }), { status: 500 });
 
     // Supabase 반환값 타입 any로 임시 처리
-    const { error }: { error: any } = await supabase
-      .from('articles')
-      .update({ text })
-      .eq('id', articleId);
+    const { error }: PostgrestSingleResponse<any> = await supabase
+    .from('articles')
+    .update({ text })
+    .eq('id', articleId);
 
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
