@@ -4,24 +4,26 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
+// 타입 정의
 interface Sentence {
   sentence: string;
   hints: string[];
   translation: string;
 }
-
 interface WordCandidate {
   word: string;
   meaning: string;
 }
 
 export default function ArticleResultPage() {
-  // 모든 Hook은 최상단에서!
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
 
+  // 마운트 체크 (SSR 하이드레이션 오류 방지)
+  const [mounted, setMounted] = useState(false);
+
+  // 상태값들
   const [articleText, setArticleText] = useState('');
   const [sentences, setSentences] = useState<Sentence[]>([]);
   const [wordCandidates, setWordCandidates] = useState<WordCandidate[]>([]);
@@ -30,15 +32,13 @@ export default function ArticleResultPage() {
   const [showOriginal, setShowOriginal] = useState<{ [idx: number]: boolean }>({});
   const [showHints, setShowHints] = useState<{ [idx: number]: boolean }>({});
 
-  // 1. 마운트 체크(하이드레이션 오류 방지)
+  // 1. 마운트 감지 (초기 1회)
   useEffect(() => {
     setMounted(true);
-    console.log('mounted true!');
   }, []);
 
-  // 2. 데이터 fetch 등 모든 Hook은 최상단에서만!
+  // 2. 기사 본문/추천 문장/단어 fetch
   useEffect(() => {
-    // mounted, id 모두 준비된 뒤에만 실행
     if (!mounted || !id) return;
 
     setLoading(true);
@@ -57,7 +57,7 @@ export default function ArticleResultPage() {
         setArticleText(data.text);
 
         try {
-          // 추천 문장/단어카드 API 호출
+          // 추천 문장/단어카드 동시 호출
           const [sentRes, wordRes] = await Promise.all([
             fetch('/api/recommend-sent', {
               method: 'POST',
@@ -100,9 +100,9 @@ export default function ArticleResultPage() {
         }
         setLoading(false);
       });
-  }, [mounted, id]); // 의존성 주의!
+  }, [mounted, id]);
 
-  // 단어카드 만들러 가기 버튼
+  // 단어카드 만들러 가기
   const handleGoToWordCards = async () => {
     if (!wordCandidates.length) {
       setError('추천 단어/숙어가 없습니다.');
@@ -112,7 +112,11 @@ export default function ArticleResultPage() {
     setError('');
     try {
       // articles에서 round_id 조회
-      const { data: articleData, error: articleError } = await supabase.from('articles').select('round_id').eq('id', id).single();
+      const { data: articleData, error: articleError } = await supabase
+        .from('articles')
+        .select('round_id')
+        .eq('id', id)
+        .single();
       if (articleError || !articleData?.round_id) {
         setError('round_id를 찾을 수 없습니다.');
         setLoading(false);
@@ -148,15 +152,15 @@ export default function ArticleResultPage() {
       }
       router.push(`/round/${roundId}/wordcards`);
     } catch (error) {
-      setError('단어카드 이동 중 오류: ' + (error instanceof Error ? error.message : error));
+      setError('단어카드 이동 중 오류: ' + (error instanceof Error ? error.message : String(error)));
     }
     setLoading(false);
   };
 
-  // 3. 렌더링에서 조건부 UI 반환
+  // 마운트 전 SSR 방지
   if (!mounted) return <div>로딩중...</div>;
-  console.log('렌더링!');
 
+  // 렌더링
   return (
     <div style={{
       maxWidth: 800,

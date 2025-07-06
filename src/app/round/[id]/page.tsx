@@ -28,14 +28,14 @@ export default function RoundDetailPage() {
       .from('rounds')
       .select('*')
       .eq('id', id)
-      .single()
+      .single<Round>() // 👈 타입 명시!
       .then(({ data }) => {
-        setRound(data);
+        setRound(data ?? null);
       });
   }, [id]);
 
   // 기사 등록 및 분석 요청
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -44,7 +44,7 @@ export default function RoundDetailPage() {
       const { data, error } = await supabase.from('articles').insert({
         round_id: id,
         url,
-      }).select('id').single();
+      }).select('id').single<{ id: number }>();
       if (error || !data) throw new Error('기사 저장 실패');
 
       // 2. 크롤링 API 호출
@@ -58,7 +58,7 @@ export default function RoundDetailPage() {
 
       // 3. 성공 시 다음 단계로 이동
       router.push(`/article/${data.id}`);
-    } catch (err) {
+    } catch (_err) {
       setError('기사 저장 또는 분석 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -102,4 +102,4 @@ export default function RoundDetailPage() {
       {error && <div style={{ color: 'red', marginBottom: 16 }}>{error}</div>}
     </div>
   );
-} 
+}

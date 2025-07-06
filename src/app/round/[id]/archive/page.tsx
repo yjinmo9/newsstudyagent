@@ -10,6 +10,7 @@ interface WordCard {
   part_of_speech: string;
   meaning: string;
   example?: string;
+  status?: string; // draft/final 구분 위해 추가
 }
 
 export default function WordCardArchivePage() {
@@ -39,9 +40,9 @@ export default function WordCardArchivePage() {
       .then(({ data, error }) => {
         if (error) setError('단어카드 불러오기 실패');
         else {
-          setWordCards(data || []);
+          setWordCards((data ?? []) as WordCard[]);
           // draft가 있으면 저장 가능, final만 있으면 저장 완료
-          const hasDraft = (data || []).some(card => card.status === 'draft');
+          const hasDraft = ((data ?? []) as WordCard[]).some(card => card.status === 'draft');
           setSaved(!hasDraft);
         }
         setLoading(false);
@@ -65,8 +66,8 @@ export default function WordCardArchivePage() {
       setSaved(true);
       // 저장 후 다시 불러오기
       const { data } = await supabase.from('word_cards').select('*').eq('round_id', id);
-      setWordCards(data || []);
-    } catch (e) {
+      setWordCards((data ?? []) as WordCard[]);
+    } catch (_e: unknown) {
       setError('저장 실패');
     }
     setLoading(false);
@@ -175,4 +176,4 @@ export default function WordCardArchivePage() {
       </div>
     </div>
   );
-} 
+}

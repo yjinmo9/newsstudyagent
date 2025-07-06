@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
-import { error } from 'console';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 const supabase = createClient(
@@ -15,8 +14,19 @@ interface WordResult {
   example?: string;
 }
 
-export const POST = async (req: Request) => {
-  const { articleText, wordCount, roundId, articleId } = await req.json();
+export const POST = async (req: Request): Promise<Response> => {
+  // 타입 명시!
+  const {
+    articleText,
+    wordCount,
+    roundId,
+    articleId,
+  }: {
+    articleText: string;
+    wordCount: number;
+    roundId: number;
+    articleId: number;
+  } = await req.json();
 
   const prompt = `\n아래 영어 기사 본문에서, 영어 학습자에게 어려울 수 있는 단어나 숙어/표현 ${wordCount}개를 추천해줘.\n각 항목에 대해 (1)영어 단어/숙어, (2)한글 뜻(무조건 한글 뜻이여야해)을 아래와 같은 JSON 배열로 만들어줘:\n\n[\n  {\n    "word": "...",\n    "meaning": "..."\n  },\n  ...\n]\n기사 본문:\n${articleText}\n`;
 
@@ -55,11 +65,16 @@ export const POST = async (req: Request) => {
     }
 
     return new Response(JSON.stringify({ result }), { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {  // 👈 타입 명시
     console.error('recommend-word API error:', error);
     if (error instanceof Error) {
       console.error('Error details:', error.message, error.stack);
     }
-    return new Response(JSON.stringify({ error: String(error instanceof Error ? error.message : error) }), { status: 500 });
+    return new Response(
+      JSON.stringify({
+        error: String(error instanceof Error ? error.message : error),
+      }),
+      { status: 500 }
+    );
   }
 };

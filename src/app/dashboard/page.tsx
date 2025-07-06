@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; // 반드시 next/navigation!
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 
@@ -39,7 +39,7 @@ export default function DashboardPage() {
       .eq('user_id', uid)
       .order('date', { ascending: false });
     if (error) setError('회차 불러오기 실패');
-    else setRounds(data as Round[]);
+    else setRounds((data ?? []) as Round[]);
     setLoading(false);
   };
 
@@ -48,7 +48,7 @@ export default function DashboardPage() {
   }, [user]);
 
   // 회차 생성
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name || !date) return;
     setLoading(true);
@@ -146,4 +146,4 @@ export default function DashboardPage() {
       </ul>
     </div>
   );
-} 
+}

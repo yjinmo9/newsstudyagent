@@ -10,6 +10,7 @@ interface WordCandidate {
 }
 
 interface WordCard {
+  id?: number;
   word: string;
   part_of_speech: string;
   meaning: string;
@@ -30,7 +31,7 @@ export default function WordCardEditPage() {
   const [saved, setSaved] = useState(false);
   const [articleId, setArticleId] = useState<number | null>(null);
 
-  // 1. draft/최종본 불러오기 + article_id 조회
+  // 데이터 로딩
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -40,12 +41,11 @@ export default function WordCardEditPage() {
       .from('articles')
       .select('id')
       .eq('round_id', Number(id))
-      .then(({ data: articles, error: articleError }) => {
-        if (!articleError && articles && articles.length > 0) {
-          setArticleId(articles[0].id);
-        }
+      .then(({ data: articles }) => {
+        if (articles && articles.length > 0) setArticleId(articles[0].id);
       });
-    // 최종본 먼저 불러오기
+
+    // 최종본 먼저
     supabase
       .from('word_cards')
       .select('*')
@@ -54,12 +54,12 @@ export default function WordCardEditPage() {
       .then(({ data: finalData, error: finalError }) => {
         if (finalError) setError('단어카드 불러오기 실패');
         else if (finalData && finalData.length > 0) {
-          setFinalCards(finalData);
+          setFinalCards(finalData as WordCard[]);
           setStep('final');
           setSaved(true);
           setLoading(false);
         } else {
-          // draft(임시) 데이터 불러오기
+          // draft(임시) 데이터
           supabase
             .from('word_cards')
             .select('*')
@@ -68,8 +68,8 @@ export default function WordCardEditPage() {
             .then(({ data: draftData, error: draftError }) => {
               if (draftError) setError('단어카드 불러오기 실패');
               else {
-                setCandidates((draftData || []).map(({ word, meaning }) => ({ word, meaning })));
-                setFinalCards(draftData || []);
+                setCandidates((draftData ?? []).map(({ word, meaning }) => ({ word, meaning })));
+                setFinalCards((draftData ?? []) as WordCard[]);
                 setStep('edit');
                 setSaved(false);
               }
@@ -79,10 +79,10 @@ export default function WordCardEditPage() {
       });
   }, [id]);
 
-  // 단어 추가 (상태만 변경, 뜻은 한글만 허용)
+  // 단어 추가
   const handleAdd = () => {
     if (!customWord.trim()) return;
-    // 한글만 허용
+    // 뜻은 한글만
     if (!/^[가-힣ㄱ-ㅎㅏ-ㅣ\s]+$/.test(customMeaning.trim())) {
       setError('뜻은 반드시 한글로 입력해야 합니다.');
       return;
@@ -93,19 +93,17 @@ export default function WordCardEditPage() {
     setError('');
   };
 
-  // 단어 삭제 (상태만 변경)
+  // 단어 삭제
   const handleDelete = (idx: number) => {
     setCandidates(prev => prev.filter((_, i) => i !== idx));
   };
 
-  // 저장하기: candidates 전체를 DB에 insert (draft로 → final로)
+  // 저장하기: candidates 전체를 draft로 DB 저장 + draft→final 변환
   const handleSave = async () => {
     setLoading(true);
     setError('');
     try {
-      // 기존 draft 모두 삭제
       await supabase.from('word_cards').delete().eq('round_id', Number(id)).eq('status', 'draft');
-      // candidates 전체 insert
       if (candidates.length > 0 && articleId) {
         const inserts = candidates.map(item => ({
           round_id: Number(id),
@@ -125,20 +123,19 @@ export default function WordCardEditPage() {
         .eq('status', 'draft');
       setSaved(true);
       setStep('final');
-      // 저장 후 최종본만 불러오기
       const { data } = await supabase
         .from('word_cards')
         .select('*')
         .eq('round_id', Number(id))
         .eq('status', 'final');
-      setFinalCards(data || []);
+      setFinalCards((data ?? []) as WordCard[]);
     } catch (e) {
       setError('저장 실패');
     }
     setLoading(false);
   };
 
-  // 종합 단어카드 표 만들기 (OpenAI 호출)
+  // (OpenAI 기반 최종 표 만들기)
   const handleMakeFinal = async () => {
     setLoading(true);
     setError('');
@@ -165,52 +162,29 @@ export default function WordCardEditPage() {
         return;
       }
       const { result } = await res.json();
-      setFinalCards(result.map((item: WordCard) => ({
-        word: item.word,
-        part_of_speech: item.part_of_speech,
-        meaning: item.meaning,
-      })));
+      setFinalCards(
+        (result as WordCard[]).map((item: WordCard) => ({
+          word: item.word,
+          part_of_speech: item.part_of_speech,
+          meaning: item.meaning,
+        }))
+      );
       // draft → final로 업데이트
       await supabase
         .from('word_cards')
         .update({ status: 'final' })
         .eq('round_id', Number(id))
         .eq('status', 'draft');
-      // update 후 finalCards 즉시 fetch
       const { data: finalCardsData } = await supabase
         .from('word_cards')
         .select('*')
         .eq('round_id', Number(id))
         .eq('status', 'final');
-      setFinalCards(finalCardsData || []);
+      setFinalCards((finalCardsData ?? []) as WordCard[]);
       setStep('final');
       setSaved(true);
     } catch (error) {
-      setError('단어카드 표 생성 실패: ' + (error instanceof Error ? error.message : error));
-    }
-    setLoading(false);
-  };
-
-  // 최종본 저장 (status를 final로 업데이트)
-  const handleSaveFinal = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      await supabase
-        .from('word_cards')
-        .update({ status: 'final' })
-        .eq('round_id', Number(id))
-        .eq('status', 'draft');
-      setSaved(true);
-      // 저장 후 최종본만 불러오기
-      const { data } = await supabase
-        .from('word_cards')
-        .select('*')
-        .eq('round_id', Number(id))
-        .eq('status', 'final');
-      setFinalCards(data || []);
-    } catch (e) {
-      setError('저장 실패');
+      setError('단어카드 표 생성 실패: ' + (error instanceof Error ? error.message : String(error)));
     }
     setLoading(false);
   };
@@ -317,4 +291,4 @@ export default function WordCardEditPage() {
       )}
     </div>
   );
-} 
+}

@@ -38,7 +38,7 @@ export default function SentenceListPage() {
           setLoading(false);
           return;
         }
-        const articleIds = (articles || []).map((a: { id: number }) => a.id);
+        const articleIds = (articles ?? []).map((a: { id: number }) => a.id);
         if (articleIds.length === 0) {
           setSentences([]);
           setLoading(false);
@@ -50,7 +50,7 @@ export default function SentenceListPage() {
           .select('*')
           .in('article_id', articleIds);
         if (sentenceError) setError('문장 불러오기 실패');
-        else setSentences(sentencesData || []);
+        else setSentences((sentencesData ?? []) as Sentence[]);
         setLoading(false);
       });
   }, [id]);
@@ -117,4 +117,4 @@ export default function SentenceListPage() {
       </div>
     </div>
   );
-} 
+}

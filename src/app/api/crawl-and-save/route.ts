@@ -38,21 +38,25 @@ async function crawlArticle(url: string): Promise<string> {
   }
 }
 
-export const POST = async (req: Request) => {
-  const { url, articleId } = await req.json();
+export const POST = async (req: Request): Promise<Response> => {
+  const { url, articleId }: { url: string; articleId: number } = await req.json();
   if (!url || !articleId) {
     return new Response(JSON.stringify({ error: 'url, articleId 필요' }), { status: 400 });
   }
   try {
     const text = await crawlArticle(url);
     if (!text) return new Response(JSON.stringify({ error: '본문 추출 실패' }), { status: 500 });
-    const { error } = await supabase
+
+    const { error }: { error: { message: string } | null } = await supabase
       .from('articles')
       .update({ text })
       .eq('id', articleId);
+
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
     return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errMsg }), { status: 500 });
   }
-}; 
+};
