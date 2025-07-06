@@ -1,14 +1,9 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
+//import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import puppeteer from 'puppeteer';
 
 // 1. articles 테이블 타입 선언 (실제 컬럼에 맞게 수정)
-interface Article {
-  id: number;
-  text: string;
-  // 필요에 따라 추가 컬럼 정의 (예: title?: string)
-}
 
 // 2. 기사 본문 크롤링 함수
 async function crawlArticle(url: string): Promise<string> {
