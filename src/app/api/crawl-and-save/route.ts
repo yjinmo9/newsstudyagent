@@ -4,9 +4,8 @@ import puppeteer from 'puppeteer';
 // Supabase 클라이언트
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_KEY!
 );
-
 // 크롤링 함수
 async function crawlArticle(url: string): Promise<string> {
   const browser = await puppeteer.launch({
@@ -23,6 +22,7 @@ async function crawlArticle(url: string): Promise<string> {
       '.article-body',
       '#articleBodyContents',
       '.story-body__inner',
+      '.article__content', // ← CNN 등 실제 본문 selector 추가
     ];
     let content = '';
     for (const selector of selectors) {

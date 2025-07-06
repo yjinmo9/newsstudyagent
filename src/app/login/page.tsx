@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import KakaoLoginButton from '@/components/auth/KakaoLoginButton';
@@ -8,14 +8,19 @@ import KakaoLoginButton from '@/components/auth/KakaoLoginButton';
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         router.replace("/dashboard");
       }
     });
   }, [router, supabase]);
+
+  // **SSR/CSR mismatch 방지용**
+  if (!mounted) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', justifyContent: 'center', background: '#fafafa' }}>

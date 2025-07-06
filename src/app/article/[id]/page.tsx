@@ -20,8 +20,8 @@ export default function ArticleResultPage() {
   const params = useParams();
   const id = params.id as string;
 
-  // 마운트 체크 (SSR 하이드레이션 오류 방지)
-  const [mounted, setMounted] = useState(false);
+  // SSR/CSR 마크업 완전 일치용 isClient 플래그
+  const [isClient, setIsClient] = useState(false);
 
   // 상태값들
   const [sentences, setSentences] = useState<Sentence[]>([]);
@@ -31,15 +31,14 @@ export default function ArticleResultPage() {
   const [showOriginal, setShowOriginal] = useState<{ [idx: number]: boolean }>({});
   const [showHints, setShowHints] = useState<{ [idx: number]: boolean }>({});
 
-  // 1. 마운트 감지 (초기 1회)
+  // SSR/CSR 일치: 마운트 시점에만 실제 렌더
   useEffect(() => {
-    setMounted(true);
+    setIsClient(true);
   }, []);
 
   // 2. 기사 본문/추천 문장/단어 fetch
   useEffect(() => {
-    if (!mounted || !id) return;
-
+    if (!isClient || !id) return;
     setLoading(true);
     setError('');
     supabase
@@ -53,7 +52,6 @@ export default function ArticleResultPage() {
           setLoading(false);
           return;
         }
-
         try {
           // 추천 문장/단어카드 동시 호출
           const [sentRes, wordRes] = await Promise.all([
@@ -98,7 +96,7 @@ export default function ArticleResultPage() {
         }
         setLoading(false);
       });
-  }, [mounted, id]);
+  }, [isClient, id]);
 
   // 단어카드 만들러 가기
   const handleGoToWordCards = async () => {
@@ -155,10 +153,10 @@ export default function ArticleResultPage() {
     setLoading(false);
   };
 
-  // 마운트 전 SSR 방지
-  if (!mounted) return <div>로딩중...</div>;
+  // **SSR/CSR 동기화 포인트**
+  if (!isClient) return <div style={{ padding: 40 }}>로딩중...</div>;
 
-  // 렌더링
+  // 실제 렌더링
   return (
     <div style={{
       maxWidth: 800,
@@ -225,3 +223,4 @@ export default function ArticleResultPage() {
     </div>
   );
 }
+

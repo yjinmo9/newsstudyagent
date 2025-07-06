@@ -13,6 +13,7 @@ interface Round {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -21,13 +22,19 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // SSR 하이드레이션 mismatch 방지
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // 로그인 체크
   useEffect(() => {
+    if (!mounted) return;
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) router.replace('/login');
       else setUser(session.user);
     });
-  }, [router]);
+  }, [router, mounted]);
 
   // 회차 리스트 불러오기
   const fetchRounds = async (uid: string) => {
@@ -67,6 +74,9 @@ export default function DashboardPage() {
     }
     setLoading(false);
   };
+
+  // 마운트 안되면 아무것도 렌더 안함(SSR/CSR mismatch 방지)
+  if (!mounted) return null;
 
   return (
     <div style={{ maxWidth: 480, margin: '40px auto', padding: 24, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee' }}>

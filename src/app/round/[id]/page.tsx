@@ -8,27 +8,36 @@ interface Round {
   id: number;
   name: string;
   date: string;
-  // 필요한 필드 추가
+  // 필요한 필드 추가 가능
 }
 
 export default function RoundDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+
+  // hydration 오류 방지용 마운트 체크!
+  const [mounted, setMounted] = useState(false);
+
   const [round, setRound] = useState<Round | null>(null);
   const [url, setUrl] = useState('');
   const [sentenceCount, setSentenceCount] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 회차 정보 불러오기
+  // 1. 마운트 감지 (CSR에서만 true로 바뀜)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 2. 회차 정보 불러오기
   useEffect(() => {
     if (!id) return;
     supabase
       .from('rounds')
       .select('*')
       .eq('id', id)
-      .single<Round>() // 👈 타입 명시!
+      .single<Round>()
       .then(({ data }) => {
         setRound(data ?? null);
       });
@@ -41,7 +50,11 @@ export default function RoundDetailPage() {
     setError('');
     try {
       // 1. articles 테이블에 text 없이 저장
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요합니다');
+
       const { data, error } = await supabase.from('articles').insert({
+        user_id: user.id,
         round_id: id,
         url,
       }).select('id').single<{ id: number }>();
@@ -65,8 +78,15 @@ export default function RoundDetailPage() {
     }
   };
 
+  // --------------- hydration 오류 방지 포인트 ---------------
+
+  // 마운트 전에는 null만 반환 → SSR/CSR 항상 일치!
+  if (!mounted) return null;
+
+  // round가 아직 불러와지지 않은 상태에서는 "로딩중" 출력
   if (!round) return <div style={{ padding: 40 }}>로딩 중...</div>;
 
+  // ---------------- 실제 렌더링 ----------------------
   return (
     <div style={{ maxWidth: 520, margin: '40px auto', padding: 24, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #eee' }}>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{round.name}</h2>
