@@ -4,6 +4,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
+interface WordCardResult {
+  word: string;
+  part_of_speech: string;
+  meaning: string;
+  example: string;
+}
+
 export const POST = async (req: Request) => {
   const { words } = await req.json(); // [{ word, meaning }, ...]
   const wordList = words.map((w: { word: string }) => w.word).join(', ');
@@ -19,9 +26,9 @@ export const POST = async (req: Request) => {
     const jsonStart = content.indexOf('[');
     const jsonEnd = content.lastIndexOf(']');
     const jsonString = content.substring(jsonStart, jsonEnd + 1);
-    const result = JSON.parse(jsonString);
+    const result: WordCardResult[] = JSON.parse(jsonString);
     return new Response(JSON.stringify({ result }), { status: 200 });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: String((error as Error)?.message || error) }), { status: 500 });
   }
 }; 

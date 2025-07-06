@@ -1,11 +1,19 @@
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
+import { error } from 'console';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+interface WordResult {
+  word: string;
+  meaning: string;
+  part_of_speech?: string;
+  example?: string;
+}
 
 export const POST = async (req: Request) => {
   const { articleText, wordCount, roundId, articleId } = await req.json();
@@ -29,12 +37,12 @@ export const POST = async (req: Request) => {
     const jsonString = content.substring(jsonStart, jsonEnd + 1);
     console.log('파싱할 JSON:', jsonString);
 
-    const result = JSON.parse(jsonString);
+    const result: WordResult[] = JSON.parse(jsonString);
     console.log('파싱 결과:', result);
 
     // DB 저장 (word_cards 테이블)
     if (roundId && articleId) {
-      const inserts = result.map((item: any) => ({
+      const inserts = result.map((item) => ({
         round_id: roundId,
         article_id: articleId,
         word: item.word,
@@ -47,8 +55,11 @@ export const POST = async (req: Request) => {
     }
 
     return new Response(JSON.stringify({ result }), { status: 200 });
-  } catch (e: any) {
-    console.error('recommend-word API error:', e, e?.message, e?.stack);
-    return new Response(JSON.stringify({ error: String(e?.message || e) }), { status: 500 });
+  } catch (error) {
+    console.error('recommend-word API error:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message, error.stack);
+    }
+    return new Response(JSON.stringify({ error: String(error instanceof Error ? error.message : error) }), { status: 500 });
   }
-}; 
+};
