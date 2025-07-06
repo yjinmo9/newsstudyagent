@@ -130,9 +130,16 @@ export default function ArticleResultPage() {
         setLoading(false);
         return;
       }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('사용자를 찾을 수 없습니다');
+        setLoading(false);
+        return;
+      }
       if (!draftData || draftData.length === 0) {
         // 추천 단어/숙어 리스트를 draft로 insert
         const inserts = wordCandidates.map((item) => ({
+          user_id: user.id,
           round_id: roundId,
           word: item.word,
           meaning: item.meaning,

@@ -52,7 +52,14 @@ export const POST = async (req: Request): Promise<Response> => {
 
     // DB 저장 (word_cards 테이블)
     if (roundId && articleId) {
+      // 사용자 정보 가져오기
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('사용자를 찾을 수 없습니다');
+      }
+
       const inserts = result.map((item) => ({
+        user_id: user.id,
         round_id: roundId,
         article_id: articleId,
         word: item.word,

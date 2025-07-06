@@ -38,7 +38,15 @@ export const POST = async (req: Request): Promise<Response> => {
 
     // DB 저장 (sentences 테이블)
     if (articleId) {
+      // 현재 로그인한 사용자 정보 가져오기
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('인증되지 않은 사용자입니다.');
+      }
+
       const inserts = result.map((item) => ({
+        user_id: user.id,
         article_id: articleId,
         text: item.sentence,
         translation: item.translation,

@@ -103,9 +103,16 @@ export default function WordCardEditPage() {
     setLoading(true);
     setError('');
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('사용자를 찾을 수 없습니다');
+        setLoading(false);
+        return;
+      }
       await supabase.from('word_cards').delete().eq('round_id', Number(id)).eq('status', 'draft');
       if (candidates.length > 0 && articleId) {
         const inserts = candidates.map(item => ({
+          user_id: user.id, // 반드시 포함!
           round_id: Number(id),
           article_id: articleId,
           word: item.word,
